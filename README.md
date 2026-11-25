@@ -4,7 +4,7 @@ COME 373 ders projesi. Ev arkadaşları, tatil grupları ve yurt odaları için 
 kaydeden, her üyenin net bakiyesini hesaplayan ve borçları **en az sayıda ödemeyle** kapatacak
 şekilde sadeleştiren web uygulaması.
 
-## Özellikler (v1)
+## Uygulama Özellikleri (v1)
 - E-posta/şifre ile kayıt ve giriş (Firebase Authentication)
 - Grup oluşturma, davet linkiyle gruba katılma
 - Harcama ekleme: açıklama, tutar, ödeyen, tarih, kategori (açıklamadan otomatik tahmin)
