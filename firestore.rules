@@ -1,0 +1,44 @@
+rules_version = '2';
+
+// OrtakKasa Firestore güvenlik kuralları
+// Firebase Console > Firestore Database > Rules sekmesine yapıştırıp "Publish" deyin.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /users/{uid} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    match /groups/{groupId} {
+      function signedIn() { return request.auth != null; }
+      function isMember() { return signedIn() && request.auth.uid in resource.data.memberIds; }
+
+      // Davet linkini açan kişinin grup adını görebilmesi için giriş yapmış herkes okuyabilir.
+      // (Grup ID'si tahmin edilemeyen rastgele bir değerdir.)
+      allow read: if signedIn();
+
+      // Grubu oluşturan kişi yönetici olur ve ilk (tek) üyedir.
+      allow create: if signedIn()
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.memberIds == [request.auth.uid];
+
+      // Üyeler grubu güncelleyebilir; üye olmayan biri ise yalnızca KENDİSİNİ ekleyebilir (davet linki).
+      allow update: if isMember() || (
+        signedIn()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberIds', 'members'])
+        && request.resource.data.memberIds.hasAll(resource.data.memberIds)
+        && request.resource.data.memberIds.removeAll(resource.data.memberIds) == [request.auth.uid]
+      );
+
+      // Grubu yalnızca yönetici silebilir.
+      allow delete: if signedIn() && resource.data.ownerId == request.auth.uid;
+
+      // Harcamalar ve ödemeler: yalnızca grup üyeleri okuyup yazabilir.
+      match /{subcollection}/{docId} {
+        allow read, write: if request.auth != null
+          && request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.memberIds;
+      }
+    }
+  }
+}
